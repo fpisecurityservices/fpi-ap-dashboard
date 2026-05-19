@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FPI · Accounts Payable</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy:       #0d2137;
+      --navy-mid:   #1a3a5c;
+      --blue:       #2563eb;
+      --red:        #dc2626;
+      --red-bg:     #fef2f2;
+      --red-border: #fecaca;
+      --amber:      #d97706;
+      --amber-bg:   #fffbeb;
+      --amber-bdr:  #fde68a;
+      --green:      #16a34a;
+      --green-bg:   #f0fdf4;
+      --green-bdr:  #bbf7d0;
+      --gray-50:    #f8fafc;
+      --gray-100:   #f1f5f9;
+      --gray-200:   #e2e8f0;
+      --gray-400:   #94a3b8;
+      --gray-500:   #64748b;
+      --gray-700:   #334155;
+      --gray-900:   #0f172a;
+      --white:      #ffffff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-900);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ───────────────────────────────────── */
+    .header {
+      background: var(--navy);
+      color: #fff;
+      padding: 0 28px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+    .header-left   { display: flex; align-items: center; gap: 14px; }
+    .logo          { font-size: 20px; font-weight: 800; letter-spacing: -.5px; color: #fff; }
+    .logo em       { font-style: normal; color: #f59e0b; }
+    .hdivider      { width: 1px; height: 22px; background: rgba(255,255,255,.18); }
+    .header-tag    { font-size: 13px; color: rgba(255,255,255,.45); font-weight: 400; }
+    .header-right  { display: flex; align-items: center; gap: 12px; }
+    .updated-label { font-size: 12px; color: rgba(255,255,255,.35); }
+    .refresh-btn {
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .refresh-btn:hover { background: rgba(255,255,255,.2); }
+    .refresh-btn.loading { opacity: .6; pointer-events: none; }
+
+    /* ── MAIN ─────────────────────────────────────── */
+    .main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── STATS ────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 20px 22px;
+      border: 1px solid var(--gray-200);
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 12px 12px 0 0;
+    }
+    .stat-card.s-red::after    { background: var(--red); }
+    .stat-card.s-amber::after  { background: var(--amber); }
+    .stat-card.s-blue::after   { background: var(--blue); }
+    .stat-card.s-navy::after   { background: var(--navy-mid); }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--gray-400);
+      margin-bottom: 10px;
+    }
+    .stat-value {
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--gray-900);
+    }
+    .stat-card.s-red   .stat-value { color: var(--red); }
+    .stat-card.s-amber .stat-value { color: var(--amber); }
+    .stat-sub { font-size: 12px; color: var(--gray-400); margin-top: 5px; }
+
+    /* ── FILTER BAR ───────────────────────────────── */
+    .filter-bar { display: flex; gap: 7px; margin-bottom: 18px; flex-wrap: wrap; }
+    .ftab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 15px;
+      border-radius: 20px;
+      border: 1px solid var(--gray-200);
+      background: var(--white);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray-500);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .ftab:hover { border-color: var(--navy-mid); color: var(--navy); }
+    .ftab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .ftab .ct {
+      background: var(--gray-100);
+      color: var(--gray-500);
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all .15s;
+    }
+    .ftab.active .ct { background: rgba(255,255,255,.2); color: #fff; }
+
+    /* ── TABLE CARD ───────────────────────────────── */
+    .table-card {
+      background: var(--white);
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      overflow: hidden;
+    }
+    .table-topbar {
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .table-topbar-title { font-size: 15px; font-weight: 600; }
+    .inv-count          { font-size: 13px; color: var(--gray-400); }
+
+    table   { width: 100%; border-collapse: collapse; }
+    thead th {
+      background: var(--gray-50);
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--gray-400);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--gray-100);
+      transition: background .1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover      { background: var(--gray-50); }
+    tbody tr.rr-overdue  { background: #fff5f5; }
+    tbody tr.rr-overdue:hover  { background: #fee2e2; }
+    tbody tr.rr-soon     { background: #fffff5; }
+    tbody tr.rr-soon:hover     { background: #fef9c3; }
+    tbody tr.rr-paid     { opacity: .55; }
+    td { padding: 13px 16px; font-size: 14px; vertical-align: middle; }
+
+    .vname { font-weight: 600; color: var(--gray-900); display: flex; align-items: center; gap: 5px; }
+    .invnum { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .amount-val { font-weight: 700; font-size: 15px; }
+    .due-cell   { font-weight: 500; }
+    .overdue-tag { display: block; font-size: 10px; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+    .soon-tag    { display: block; font-size: 10px; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+    .parse-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      background: var(--amber);
+      border-radius: 50%;
+      flex-shrink: 0;
+      cursor: default;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      white-space: nowrap;
+    }
+    .b-unpaid   { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
+    .b-approved { background: #eff6ff;          color: var(--blue);  border: 1px solid #bfdbfe; }
+    .b-paid     { background: var(--green-bg);  color: var(--green); border: 1px solid var(--green-bdr); }
+    .b-other    { background: var(--amber-bg);  color: var(--amber); border: 1px solid var(--amber-bdr); }
+
+    /* Action buttons */
+    .act-btn {
+      padding: 5px 13px;
+      border-radius: 6px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .act-btn + .act-btn { margin-left: 5px; }
+    .btn-approve { background: #eff6ff; color: var(--blue); }
+    .btn-approve:hover { background: #dbeafe; }
+    .btn-paid    { background: var(--green-bg); color: var(--green); }
+    .btn-paid:hover { background: #dcfce7; }
+    .btn-undo    { background: var(--gray-100); color: var(--gray-500); }
+    .btn-undo:hover { background: var(--gray-200); }
+
+    /* State screens */
+    .state-box { padding: 64px 20px; text-align: center; color: var(--gray-400); }
+    .state-icon  { font-size: 44px; margin-bottom: 12px; }
+    .state-title { font-size: 16px; font-weight: 600; color: var(--gray-500); margin-bottom: 6px; }
+    .state-sub   { font-size: 14px; }
+
+    .spinner {
+      width: 30px; height: 30px;
+      border: 3px solid var(--gray-200);
+      border-top-color: var(--navy);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+      margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESPONSIVE ───────────────────────────────── */
+    @media (max-width: 900px) {
+      .stats-grid          { grid-template-columns: repeat(2, 1fr); }
+      .col-date, .col-po   { display: none; }
+    }
+    @media (max-width: 600px) {
+      .main            { padding: 14px; }
+      .header          { padding: 0 14px; }
+      .header-tag      { display: none; }
+      .hdivider        { display: none; }
+      .updated-label   { display: none; }
+      .stats-grid      { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .stat-value      { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">FPI<em>·</em></div>
+    <div class="hdivider"></div>
+    <div class="header-tag">Accounts Payable</div>
+  </div>
+  <div class="header-right">
+    <span class="updated-label" id="updatedAt">—</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadInvoices()">↻ Refresh</button>
+  </div>
+</header>
+
+<!-- ── MAIN ──────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card s-red">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value" id="s-overdue">—</div>
+      <div class="stat-sub">Past due date</div>
+    </div>
+    <div class="stat-card s-amber">
+      <div class="stat-label">Due This Week</div>
+      <div class="stat-value" id="s-soon">—</div>
+      <div class="stat-sub">Within 7 days</div>
+    </div>
+    <div class="stat-card s-blue">
+      <div class="stat-label">Pending Approval</div>
+      <div class="stat-value" id="s-approved">—</div>
+      <div class="stat-sub">Ready to pay</div>
+    </div>
+    <div class="stat-card s-navy">
+      <div class="stat-label">Total Unpaid</div>
+      <div class="stat-value" id="s-total">—</div>
+      <div class="stat-sub">Open balance</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <button class="ftab active" data-f="all"      onclick="setFilter('all')">All <span class="ct" id="ct-all">0</span></button>
+    <button class="ftab"        data-f="overdue"   onclick="setFilter('overdue')">🔴 Overdue <span class="ct" id="ct-overdue">0</span></button>
+    <button class="ftab"        data-f="soon"      onclick="setFilter('soon')">🟡 Due Soon <span class="ct" id="ct-soon">0</span></button>
+    <button class="ftab"        data-f="Unpaid"    onclick="setFilter('Unpaid')">Unpaid <span class="ct" id="ct-unpaid">0</span></button>
+    <button class="ftab"        data-f="Approved"  onclick="setFilter('Approved')">Approved <span class="ct" id="ct-approved">0</span></button>
+    <button class="ftab"        data-f="Paid"      onclick="setFilter('Paid')">✓ Paid <span class="ct" id="ct-paid">0</span></button>
+  </div>
+
+  <!-- Invoice Table -->
+  <div class="table-card">
+    <div class="table-topbar">
+      <span class="table-topbar-title">Invoices</span>
+      <span class="inv-count" id="invCount">—</span>
+    </div>
+    <div id="tableBody">
+      <div class="state-box">
+        <div class="spinner"></div>
+        <div class="state-title">Loading invoices…</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ──────────────────────────────────────────────────────────────
+  // CONFIG — paste your deployed Apps Script URL here
+  // ──────────────────────────────────────────────────────────────
+  const API = 'https://script.google.com/macros/s/AKfycbzH_k3btZVyiqMkYri8d4GcHhs8v0Y0e-cirIHWRMr5OP12aTKD3LqOhkqH425gQg7a/exec';
+
+  let allInvoices  = [];
+  let activeFilter = 'all';
+
+  // ── LOAD ────────────────────────────────────────────────────
+  async function loadInvoices() {
+    const btn = document.getElementById('refreshBtn');
+    btn.classList.add('loading');
+    btn.textContent = '↻  Loading…';
+    showLoading();
+
+    try {
+      const res  = await fetch(`${API}?action=getData`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Unknown error');
+
+      allInvoices = json.data || [];
+      refreshUI();
+
+      const t = new Date();
+      document.getElementById('updatedAt').textContent =
+        `Updated ${t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } catch (err) {
+      showError(err.message);
+      document.getElementById('updatedAt').textContent = 'Load failed';
+    } finally {
+      btn.classList.remove('loading');
+      btn.textContent = '↻ Refresh';
+    }
+  }
+
+  // ── CLASSIFY ────────────────────────────────────────────────
+  function classify(inv) {
+    const status = (inv['Status'] || '').trim();
+    if (status === 'Paid') return 'paid';
+
+    const raw = inv['Due Date'];
+    if (!raw) return 'unpaid';
+
+    const due   = new Date(raw);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff  = Math.ceil((due - today) / 86400000);
+
+    if (diff <  0) return 'overdue';
+    if (diff <= 7) return 'soon';
+    return 'unpaid';
+  }
+
+  // ── REFRESH ALL UI ──────────────────────────────────────────
+  function refreshUI() {
+    updateStats();
+    updateCounts();
+    renderTable();
+  }
+
+  // ── STATS ───────────────────────────────────────────────────
+  function updateStats() {
+    let overdue = 0, soon = 0, approved = 0, total = 0;
+
+    allInvoices.forEach(inv => {
+      const cls    = classify(inv);
+      const status = (inv['Status'] || 'Unpaid').trim();
+      const amt    = parseAmt(inv['Amount Due']);
+
+      if (cls    === 'overdue')  overdue++;
+      if (cls    === 'soon')     soon++;
+      if (status === 'Approved') approved++;
+      if (status !== 'Paid')     total += amt;
+    });
+
+    document.getElementById('s-overdue').textContent  = overdue;
+    document.getElementById('s-soon').textContent     = soon;
+    document.getElementById('s-approved').textContent = approved;
+    document.getElementById('s-total').textContent    =
+      '$' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // ── COUNTS ──────────────────────────────────────────────────
+  function updateCounts() {
+    const c = { all: allInvoices.length, overdue: 0, soon: 0, Unpaid: 0, Approved: 0, Paid: 0 };
+
+    allInvoices.forEach(inv => {
+      const cls    = classify(inv);
+      const status = (inv['Status'] || 'Unpaid').trim();
+      if (cls === 'overdue')   c.overdue++;
+      if (cls === 'soon')      c.soon++;
+      c[status] = (c[status] || 0) + 1;
+    });
+
+    document.getElementById('ct-all').textContent      = c.all;
+    document.getElementById('ct-overdue').textContent  = c.overdue;
+    document.getElementById('ct-soon').textContent     = c.soon;
+    document.getElementById('ct-unpaid').textContent   = c['Unpaid']   || 0;
+    document.getElementById('ct-approved').textContent = c['Approved'] || 0;
+    document.getElementById('ct-paid').textContent     = c['Paid']     || 0;
+  }
+
+  // ── FILTER ──────────────────────────────────────────────────
+  function setFilter(f) {
+    activeFilter = f;
+    document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[data-f="${f}"]`).classList.add('active');
+    renderTable();
+  }
+
+  function getFiltered() {
+    if (activeFilter === 'all')     return allInvoices;
+    if (activeFilter === 'overdue') return allInvoices.filter(i => classify(i) === 'overdue');
+    if (activeFilter === 'soon')    return allInvoices.filter(i => classify(i) === 'soon');
+    return allInvoices.filter(i => (i['Status'] || 'Unpaid').trim() === activeFilter);
+  }
+
+  // ── RENDER TABLE ─────────────────────────────────────────────
+  function renderTable() {
+    const list = getFiltered();
+    const body = document.getElementById('tableBody');
+
+    document.getElementById('invCount').textContent =
+      `${list.length} invoice${list.length !== 1 ? 's' : ''}`;
+
+    if (list.length === 0) {
+      body.innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">📭</div>
+          <div class="state-title">No invoices here</div>
+          <div class="state-sub">Nothing matches the current filter.</div>
+        </div>`;
+      return;
+    }
+
+    const rows = list.map(inv => {
+      const cls        = classify(inv);
+      const status     = (inv['Status'] || 'Unpaid').trim();
+      const parseError = inv['Parse Error'] === 'YES';
+
+      // Due date display
+      const dueDateRaw = inv['Due Date'] || '';
+      let dueDateDisp  = dueDateRaw || '—';
+      let dueDateExtra = '';
+      if (dueDateRaw) {
+        const dueDate = new Date(dueDateRaw);
+        const today   = new Date(); today.setHours(0,0,0,0);
+        const diff    = Math.ceil((dueDate - today) / 86400000);
+        if (cls === 'overdue') dueDateExtra = `<span class="overdue-tag">⚠ ${Math.abs(diff)}d overdue</span>`;
+        if (cls === 'soon')    dueDateExtra = `<span class="soon-tag">Due in ${diff}d</span>`;
+      }
+
+      // Badge
+      const badge =
+        status === 'Unpaid'   ? `<span class="badge b-unpaid">Unpaid</span>` :
+        status === 'Approved' ? `<span class="badge b-approved">Approved</span>` :
+        status === 'Paid'     ? `<span class="badge b-paid">✓ Paid</span>` :
+                                `<span class="badge b-other">${status}</span>`;
+
+      // Actions
+      let actions = '';
+      if (status === 'Unpaid') {
+        actions = `<button class="act-btn btn-approve" onclick="updateStatus(${inv._row},'Approved')">Approve</button>`;
+      } else if (status === 'Approved') {
+        actions = `
+          <button class="act-btn btn-paid" onclick="updateStatus(${inv._row},'Paid')">Mark Paid</button>
+          <button class="act-btn btn-undo" onclick="updateStatus(${inv._row},'Unpaid')">Undo</button>`;
+      } else if (status === 'Paid') {
+        actions = `<button class="act-btn btn-undo" onclick="updateStatus(${inv._row},'Unpaid')">Reopen</button>`;
+      }
+
+      const rowCls =
+        cls === 'overdue' ? 'rr-overdue' :
+        cls === 'soon'    ? 'rr-soon' :
+        status === 'Paid' ? 'rr-paid' : '';
+
+      return `
+        <tr class="${rowCls}">
+          <td>
+            <div class="vname">
+              ${escHtml(inv['Vendor'] || 'Unknown Vendor')}
+              ${parseError ? `<span class="parse-dot" title="Auto-parse may be incomplete — verify manually"></span>` : ''}
+            </div>
+            <div class="invnum">${escHtml(inv['Invoice #'] || 'No Invoice #')}</div>
+          </td>
+          <td><span class="amount-val">${fmtAmt(inv['Amount Due'])}</span></td>
+          <td class="col-date">${escHtml(inv['Date Received'] || '—')}</td>
+          <td class="due-cell">${dueDateDisp}${dueDateExtra}</td>
+          <td class="col-po">${escHtml(inv['PO #'] || '—')}</td>
+          <td>${badge}</td>
+          <td>${actions}</td>
+        </tr>`;
+    }).join('');
+
+    body.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Vendor / Invoice #</th>
+            <th>Amount</th>
+            <th class="col-date">Received</th>
+            <th>Due Date</th>
+            <th class="col-po">PO #</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ── UPDATE STATUS ────────────────────────────────────────────
+  async function updateStatus(rowNum, newStatus) {
+    try {
+      const res  = await fetch(`${API}?action=updateStatus&row=${rowNum}&status=${encodeURIComponent(newStatus)}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+
+      // Update local state without a full reload
+      const inv = allInvoices.find(i => i._row === rowNum);
+      if (inv) inv['Status'] = newStatus;
+      refreshUI();
+    } catch (err) {
+      alert('Could not update status: ' + err.message);
+    }
+  }
+
+  // ── HELPERS ──────────────────────────────────────────────────
+  function parseAmt(val) {
+    if (!val) return 0;
+    const n = parseFloat(val.toString().replace(/[$,\s]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function fmtAmt(val) {
+    const n = parseAmt(val);
+    if (!n && val) return escHtml(String(val));
+    if (!n) return '—';
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function showLoading() {
+    document.getElementById('tableBody').innerHTML = `
+      <div class="state-box">
+        <div class="spinner"></div>
+        <div class="state-title">Loading invoices…</div>
+      </div>`;
+  }
+
+  function showError(msg) {
+    document.getElementById('tableBody').innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">⚠️</div>
+        <div class="state-title">Could not load invoices</div>
+        <div class="state-sub">${escHtml(msg)}</div>
+      </div>`;
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────
+  loadInvoices();
+  setInterval(loadInvoices, 5 * 60 * 1000);   // auto-refresh every 5 min
+</script>
+</body>
+</html>
